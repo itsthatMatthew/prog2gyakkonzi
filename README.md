@@ -31,8 +31,8 @@ A projektnek nem célja és érdeke az előadásokat és laborokat helyettesíte
 
 A projekt teljes kódbázisa elérhető GitHub-on. Ezen belül az egyes szakaszok különböző brancheken helyezkednek el, így ezek között navigálva lehet az egyre komplexebb feladatokkal megismerkedni.
 
-Amennyiben saját tempódban szeretnél haladni, és nem a mintamegoldást másolni, érdemes a repository másolása után a kiinduló branchet kiválasztani, és erről egy újat létrehozva azon dolgozni.
-A kiinduló projekt olyan szerkezetű, hogy ahhoz érdemben új kódnak nem kell kerülnie, minden változtatást mi fogunk rajta végezni.
+Amennyiben saját tempódban szeretnél haladni, és nem a mintamegoldást másolni, érdemes a repository másolása után a [kiinduló branchet](https://github.com/itsthatMatthew/prog2gyakkonzi/tree/terv-1-szakasz) kiválasztani, és erről egy másolatot létrehozva azon dolgozni.
+A kiinduló projekt olyan szerkezetű, hogy ahhoz érdemben új kódnak mást felülírva nem kell kerülnie, minden változtatást mi fogunk rajta végezni, vagy plusz forrásokat segítségként behúzni.
 
 ## Expozíció
 
