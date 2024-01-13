@@ -9,7 +9,7 @@
 
 #include "idojaras_szamitasok.h"
 
-int celsius_fahrenheit_atvalto(int celsius) {
+int celsius_to_fahrenheit(int celsius) {
   return celsius; // FIXME(KRI): nem találtam meg a képletet a függvénytáblában,
-                  //             valaki tudnak segíteni? :(
+                  //             valaki tudna segíteni? :(
 }
