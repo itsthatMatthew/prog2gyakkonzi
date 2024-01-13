@@ -9,5 +9,7 @@
 
 /**
  * @brief Celsiusból Fahrenheitbe váltó függvény.
+ * 
+ * @returns A hőmérséklet Fahrenheitben.
  */
-int celsius_fahrenheit_atvalto(int);
+int celsius_to_fahrenheit(int celsius);
