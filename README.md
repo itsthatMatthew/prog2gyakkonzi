@@ -10,8 +10,9 @@ A szakasz érinti:
 [referencia típus](#3-részfeladat---paraméterek-közvetlen-elérése),
 [kivételek dobása és kezelése](#4-részfeladat---kivételek),
 [függvénynév túlterhelése](#5-részfeladat---függvénynév-túlterhelése),
-[alapértelmezett paraméterek](#6-részfeladat---alapértelmezett-paraméterek),
-[függvénysablonok](#7-részfeladat---függvénysablonok).
+[függvénysablonok](#6-részfeladat---függvénysablonok),
+[alapértelmezett paraméterek](#7-részfeladat---alapértelmezett-paraméterek),
+[dinamikus memóriakezelés](#8-részfeladat---dinamikus-memóriakezelés).
 
 Amennyiben egy-egy részfeladat után pihennél, vagy akár utánaolvasnál részletesebben valamelyik témának, nyugodtan. Magam sem ajánlom az egész szakasz egyben végigpörgetését - ez a törzsanyagban 2 hetet fed le!
 
@@ -320,9 +321,59 @@ A mi esetünkben (`celsius_to_fahrenheit()`) a módszer hátránya persze az, ho
 
 Üzenetben válaszolt, csak ennyit írt: "luke alika nem csipte, szerinte van sokkal jobb megoldas is 🤷‍♀️"
 
-Hogy mégis mi a jelen esetben sokkal jobb megoldás, Aladár a nagy siettségében már nem volt hajlandó megosztani. Annyival lerázott minket, hogy "majd ha lesz időm, elmagyarázom, de ez érezhetően túl sok lenne most nektek".
+Hogy mégis mi a jelen esetben sokkal jobb megoldás, Aladár a nagy siettségében már nem volt hajlandó megosztani. Annyival lerázott minket, hogy "keressetek meg személyesen, majd elmagyarázom".
 
-## 6. Részfeladat - alapértelmezett paraméterek
+## 6. Részfeladat - függvénysablonok
+
+Mivel nem hagyott minket nyugodni a dolog, felkerestük Aladárt a "jobb megoldás" kiderítéséhez. Nyugodt hangnemben azzal kezdte: "Nem érzed, hogy ha háromszor írod meg ugyan azt a kódrészletet, akkor valami gyökeres hiba van a megközelítésedben?"
+
+Nos, ezt már mi is felismertük, szóval egyelőre csak elismerően tudunk bólogatni, hogy de, bár maga a túlterhelés egy nagyon jó dolog a függvényekhez, a különböző típusokra azonos függvénytörzs problémáját nem tudjuk kiváltani vele. "Sablonokról hallottál már?" - kérdezte, és igen, még Prog2 előadásról dereng valami... volt valami varázsszó is hozzá...
+
+"Generikusság, vagy bármi hasonló kifejezés?" - folytatta Aladár, és igen, ez már valóban ismerős volt. "Szóval egyszerűen csak egy sablont kell megírni rá, és kész is" - fejezte be mondani valóját, szóval valóban nincs más dolgunk, mint a 3 különböző típussal túlterhelt függvényünket leváltani egy függvénysablonnal!
+
+> 🚦 *Akkor érdemes továbbhaladnod, ha az eddigi résszel már megpróbálkoztál.*
+
+### Megoldás
+
+Függvénysablonok írásához C++-ban a `template` kulcsszót használhatjuk fel, ezt pedig a `<>` ("kúpos zárójelpár") követi, melyen belül a sablonparamétereinket sorolhatjuk fel. Itt még van egy nagyon fontos kulcsszó: a `typename` segítségével egy olyan típusváltozót deklarálhatunk, mely értékül egy típust vesz fel. Mindez gyakorlatban:
+
+```cpp
+template<typename T>
+T celsius_to_fahrenheit(T celsius); // celsius típusa fordítási időben fog kiderülni
+```
+
+Ahol a `T` által jelölt típust aztán a használatnak megfelelően fogja a fordító behelyettesíteni:
+
+```cpp
+int fahrenheit = celsius_to_fahrenheit<int>(20); // a specifikált int típussal fog fordulni
+```
+
+Akár tetszőlegesen sok típussal is felhasználhatjuk innentől a függvényt, ugyanis a fordító minden egyes híváshoz az annak megfelelő típusú változatot el fogja készíteni.
+De amennyiben a típust a fordító a kód kontextusából is ki tudja találni, ennek explicit megadása akár el is hagyható:
+
+```cpp
+auto fahrenheit = celsius_to_fahrenheit(20.0f); // float típussal fog fordulni
+```
+
+> C++-ban az `auto` kulcsszó egy változó deklarációjánál használható fel, ekkor típusa az inicializációs kontextusból lesz kikövetkeztetve, azonban ilyen forma támogatottságot csak `C++11`-óta élvez!
+
+Lehetőségünk van még "explicit" vagy "teljes" sablonspecializációt megadni bizonyos típusokra, ami abban az esetben hasznos, ha egy bizonyos típus sablonba történő behelyettesítése esetén más működést szeretnénk elérni. Mondjuk amennyiben biztosra szeretnénk menni, hogy a `celsius_to_fahrenheit()` függvényünk C-stílusú sztringet paraméterül kapva először azt parsolja, majd a szükséges számítást elvégzi, végül pedig sztringbe írja vissza, a következő specializációt adhatjuk meg:
+
+```cpp
+template<typename T> // az alap sablon, amibe be fog helyettesíteni
+T celsius_to_fahrenheit(T celsius);
+
+template<> // amennyiben így adjuk meg a specializációt, erre a típusra külön törzset írhatunk
+const char* celsius_to_fahrenheit<const char*>(const char *celsius_str);
+```
+
+Ekkor a függvény deklarációjánál (ahol a sablon szignatúrát ugyan úgy meg kell tartanunk) más működést adhatunk neki, persze kérdés, hogy jelen esetben ezt tényleg meg akarjuk-e tenni.
+
+Sablonparaméterekből egyébként tetszőleges számút adhatunk meg, valamint a következő részben tárgyalt alapértelmezést velük is meg lehet tenni, csak alapvetően a `typename` kulcsszó segítségével nem konkrét értéket, hanem típust vesznek át paraméterül. Ennek ellenére megtehetjük azt is, hogy egy sablon paramétere egy konkrét típus legyen, akkor a fordítási időben kiértékelődést nyerjük a metodikával, ami bizonyos helyzetekben nagyon hasznos lehet.
+
+> A C++ nyelv által a generikusságra való törekedéshez szolgáltatott függvénysablonok egy nagyon erős eszköz a kezünkben, segítségükkel sokkal több mindent meg lehet tenni, mint amire a törzsanyaghoz szükségünk van.
+
+## 7. Részfeladat - alapértelmezett paraméterek
 
 Azonban Kriszta még valamiben a segítségünket kérné: Aladár nem csak a mi megoldásunkra szólt be, de az övéére is: szerinte az `its_too_cold()` függvényt "így semmi értelme szétbontani, az egyparaméterű felesleges, a `reference_temp` meg egybe belefér".
 
@@ -361,13 +412,74 @@ Ekkor persze a névütközést a fordító is jelzi számunkra, de érdemes tisz
 
 > Aladár tippje: amennyiben az alapértelmezett érték felismerésére elágazást használsz, érdemes lehet az egyszerű függvénytúlterhelést választanod alapértékek helyett, hiszen ezek szerint más paraméterlistákhoz más funkcionalitást is vársz.
 
-## 7. Részfeladat - függvénysablonok
-
-
-
 ## 8. Részfeladat - dinamikus memóriakezelés
 
+Az első szakasz utolsó feladataként Kriszta még arra kér, hogy Géza régi kódjában kéne egy-két felújítást végezned. Állítása szerint csak pár kulcsszót kell átírnod, és kész is, szóval közösségi tehervállalás gyanánt igent mondasz a feladatra.
 
+Géza dinamikus memóriakezelést végző kódja eddig úgy működött, hogy a mérőállomás által rögzített adatokat egy `WeatherDataPoint` struktúrába írta bele, majd egy ezekből álló dinamikus tömbhöz hozzáírta az új elemet.
 
-## Összegzés
+A dinamikus tömböt kezelő függvények átveszik az eddig meglevő dinamikus tömböt, a dinamikus tömb méretére mutató pointer, valamint új elem felvételénél az új elemre mutató pointert. A sok pointer közül párat már referencia típussal ki is tudunk váltani, valamint a függvények törzséhez is hozzá kéne szólnunk.
 
+Feladatod egyelőre tehát Géza kódbázisának "C++-osítása" (mint ahogyan azt Kriszta több helyen már meg is tette), jelen esetben legfőképpen a dinamikus memóriakezelést végző `malloc()` és `free()` függvények helyettesítése modernebb megfelelőikkel.
+
+> 🚦 *Akkor érdemes továbbhaladnod, ha az eddigi résszel már megpróbálkoztál.*
+
+### Megoldás
+
+Elsőnek az új elemet felvevő függvénnyel foglalkozva, ha a csak közvetlen elérésre felhasznált pointereket referenciákra cseréljük, a kódrészlet egyből jobban olvashatóvá válik:
+
+```cpp
+WeatherDataPoint* add_new_weather_data_point(WeatherDataPoint *src_array, size_t &array_size, WeatherDataPoint &new_data) {
+    WeatherDataPoint *new_array =
+      (WeatherDataPoint*)malloc((array_size + 1) * sizeof(WeatherDataPoint));
+    if (new_array == NULL) return src_array;
+
+    if (src_array != NULL) {
+      for (size_t idx = 0; idx != array_size; idx++) {
+        new_array[idx] = src_array[idx];
+      }
+    }
+    free(src_array);
+    new_array[array_size++] = new_data;
+
+    return new_array;
+}
+```
+
+Ezt követően a `malloc` függvényt lecserélhetjük a `new` operátorra, ezzel is olvashatóbb lesz a függvény. Fontos, hogy a "sima" `new` csak egy elemnek elég helyet foglal a heapen, így dinamikus tömbkezeléshez nekünk a `new[]` operátort kell használnunk. Ezzel dolgozva már nem kell a visszakapott `void*` helyessé kasztolásával foglalkoznunk, valamint a `sizeof` segítségével végzett méretszámítáról is magától gondoskodik:
+
+```cpp
+WeatherDataPoint *new_array = new WeatherDataPoint[array_size + 1];
+```
+
+A `new` kulcsszónak van még egy olyan hasznos tulajdonsága, hogy sikertelen foglalás esetén `std::bad_alloc` típusú kivételt dob. Ezt kezelhetnénk magunknak is a függvényben, de ha nem kapjuk el, a hívó félhez fog kerülni, így érdemesebb rá hagyni, hogy ilyen hiba esetén mit szeretne tenni. Ez azonban azt jelenti, hogy a visszakapott pointer explicit ellenőrzésére igazából nincs is szükségünk.
+
+Azonban még valami, amin fejleszthetünk, az a `free` függvények használata mindkét esetben. Mivel a memória foglalása a mi esetünkben a `new[]` operátorral történik meg, ennek "párját", a `delete[]` operátort kell hasznánlunk. Még annyi felújítást el tudunk végezni, hogy a régies `NULL` makró helyett `nullptr`-t használnuk:
+
+```cpp
+WeatherDataPoint* add_new_weather_data_point(WeatherDataPoint *src_array, size_t &array_size, WeatherDataPoint &new_data) {
+    WeatherDataPoint *new_array = new WeatherDataPoint[array_size + 1];
+
+    if (src_array != nullptr) {
+      for (size_t idx = 0; idx != array_size; idx++) {
+        new_array[idx] = src_array[idx];
+      }
+    }
+    delete[] src_array;
+    new_array[array_size++] = new_data;
+
+    return new_array;
+}
+
+WeatherDataPoint* remove_all_weather_data_point(WeatherDataPoint *din_array, size_t &array_size) {
+  if (din_array != nullptr) {
+    delete[] din_array;
+    array_size = 0;
+  }
+  return nullptr;
+}
+```
+
+## Összefoglalás
+
+Az első szakasz végéhez érve visszanézhetünk arra a rengeteg újdonságra, amivel a C++ nyelv könnyebbé tudja tenni az életünket C-hez képest.
