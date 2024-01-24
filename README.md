@@ -64,7 +64,7 @@ using idojaras_allomas;
 celsius_to_fahrenheit(20); // bármit ami a névtérben található közvetlenül elérünk
 ```
 
-Az utolsó kettő esetet érdemes csak függvényen belül felhasználni, hogy ne a terres forrásfilera legyenek érvényesek. Ennek megfelelően fejlécfileban névteret kinyitni az összes azt tartalmazó forrásfileban érvényesülni fog, így ez kifejezetten rosz öttlet.
+Az utolsó kettő esetet érdemes csak függvényen belül felhasználni, hogy ne a teljes forrásfilera legyenek érvényesek. Ennek megfelelően fejlécfileban névteret kinyitni az összes azt tartalmazó forrásfileban érvényesülni fog, így ez kifejezetten rosz öttlet.
 
 > Egy névtérbe tetszőlegesen sok mindent elhelyezhetünk, valamint akár ágyazhatjuk is őket egymásba. Amennyiben valamit nem helyeztünk explicit névtérbe, tehát az úgynevezett "globális névtérben" található, akkor is a `::` operátort tudjuk felhasználni ennek egyértelműsítésére, csak ekkor nem kell semmit elé írnunk.
 
@@ -72,7 +72,7 @@ Az utolsó kettő esetet érdemes csak függvényen belül felhasználni, hogy n
 
 ## Ismertető - I/O streamek
 
-Egy másik korábban még nem látott konstrukció az úgynevezett "stream"-ek. Működésüket most nem is fogjuk részletezni, a félév során szépen fel fog épülni akár a megírásukhoz is szükséges ismeretek, azonabn használatuk meglehetősen egyszerű.
+Egy másik korábban még nem látott konstrukció az úgynevezett "stream"-ek. Működésüket most nem is fogjuk részletezni, a félév során szépen fel fog épülni akár a megírásukhoz is szükséges ismeretek, azonban használatuk meglehetősen egyszerű.
 
 Az alapvető konzolos kommunikációra felhasznált streamek az `iostream` fejlécfileban találhatóak, és lényegében a `scanf()` és `printf()` függvények elegánsabb kiváltását teszik lehetővé. Beolvasásra az `std::cin`, kiírásra az `std::cout` használható az "extraction" `>>` és "insertion" `<<` operátorokkal.
 
@@ -97,7 +97,7 @@ Mikrokontrolleres kis példáinkban kezdetben pont nem ezeket a streameket fogju
 
 Mindezek után Kriszta tehát arra kér, hogy az `idojaras_szamitasok.h` és `idojaras_szamitasok.cpp` fileokban elkezdett `int celsius_to_fahrenheit(int);` prototípusú függvényt kidolgozd.
 
-Magát a projektet az `IdojarasAllomas` mappában találod. A projekt alapvető szerkezete olyan, hogy mikrokontrollerre lehessen fordítani, de te ettől ne ijedj meg, ilyen ismeretekhez a feladatok megoldásához nincsen szükséged.
+Magát a projektet az `IdojarasAllomas` mappában találod. A projekt alapvető szerkezete olyan, hogy mikrokontrollerre lehessen fordítani, de ettől senkinek nem kell megijednie, ilyen részletes ismeretekhez a feladatok megoldásához nincs szükség.
 
 A forráskód az `src` mappában található. Ebben kell dolgoznod. Reményeink szerint a projekt végső kiadása olyan lesz, hogy a feladat platformfüggetlenül tudjon fordulni és futni, ezzel megkönnyítve az otthoni példamegoldást és tesztelést.
 
@@ -220,7 +220,7 @@ if (failure) { /*...*/ }
 
 Mint látjuk, referenciákat felhasználva egyáltalán nincsen szükség a pointerek használatakor előkerülő kellemetlenségekre, mint a címképzés vagy a dereferálás, csupán a változó deklarációjakor `*` helyett `&` jelet használunk. Azonban ez például a tömbök pointerként való viselkedésétől nem ment meg minket - szerencsére más majd igen... félig.
 
-> Referenciákat nem csak paraméterlistán, hanem bárhol a kódban tudunk létrehozni. Fontos tulajdonságuk, hogy mindig inicializálni kell őket, és nem tudjuk őket átállítani más változóra. Hasznos eszköz még paraméterlistákban a `const` minősítővel használni őket, például olyankor, amikor nagyméretű adatstruktúrára pointert használnánk, hogy a másolást elkerüljük. `const &` létrehozása ugyanis a másolást elkerüli, azonban az adott struktúrához így csak olvasásra tudunk hozzáférni, annak adattagjait felülírni nem.
+> Referenciákat nem csak paraméterlistán átadásra tudunk használni, hanem bárhol a kódban létrehozni, hogy *alias*-ként viselkedjen (pl.: `int i = 0; int& r = i;`). Fontos tulajdonságuk, hogy mindig inicializálni kell őket, és ez után nem lehet vele már más változóra mutatni. Hasznos eszköz még paraméterlistákban a `const` minősítővel használni őket, például olyankor, amikor nagyméretű adatstruktúrára pointert használnánk, hogy a másolást elkerüljük. `const&` létrehozása ugyanis a másolást elkerüli, azonban az adott struktúrához így csak olvasásra tudunk hozzáférni, annak adattagjait felülírni nem engedi a fordító.
 
 ## 4. Részfeladat - kivételek
 
