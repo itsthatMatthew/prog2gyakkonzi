@@ -1,67 +1,92 @@
-/**
- * @file main.cpp
- * @author Aladár (aka ALA)
- * @brief Vezérlési kód az időjárás állomás működtetéséhez.
- * 
- * @copyright Copyright (c) 2024 P2GyK Informatika Zrt.
- * 
- */
+#include <Arduino.h>
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
 
-#include <Arduino.h>           // ALA: általános vezérlési kód használatához
-#include <DHT.h>               // ALA: DHT osztály használatához
-#include <LiquidCrystal_I2C.h> // ALA: LiquidCrystal_I2C osztály használatához
+#include ".\controller\weather_station_controller.h"
+#include ".\model\weather_data_container.h"
+#include ".\view\weather_data_view.h"
 
-#include "idojaras_szamitasok.h" // ALA: Kriszta által kidolgozott
-                                 //      segédfüggvények időjárási számításokhoz
+class WeatherLcdView : public WeatherStation::IWeatherDataView {
+public:
+  WeatherLcdView(LiquidCrystal_I2C& lcd) : lcd_display(lcd) {}
+  void displayCurrent(WeatherStation::WeatherDatapoint current_datapoint) override {
+    lcd_display.setCursor(0,0);
+    lcd_display.printf("Homerseklet:%3.0fC", current_datapoint.getTemperature());
+    lcd_display.setCursor(0,1);
+    lcd_display.printf("Paratartalom:%2.0f%%", current_datapoint.getHumidity());
+  }
+  void displayHistory(std::vector<WeatherStation::WeatherDatapoint> history_datapoints) override {
+    lcd_display.setCursor(0,0);
+    lcd_display.printf("Hom. elozo 5 ora");
+    lcd_display.setCursor(0,1);
 
-LiquidCrystal_I2C lcd_display(0x27, 16, 2);
+    std::vector<float> history;
+    size_t minute_counter = 0;
+    float accumulator = 0.f;
+
+    for (auto iter = history_datapoints.rbegin(); iter != history_datapoints.rend(); iter++) {
+      accumulator += iter->getTemperature();
+      minute_counter++;
+      if (minute_counter % 60 == 0) { history.push_back(accumulator / 60.f); accumulator = 0.f; }
+    }
+
+    history.resize(5);
+
+    lcd_display.printf("%2.0fC-%2.0f-%2.0f-%2.0f-%2.0fC", history[4], history[3], history[2], history[1], history[0]);
+  }
+
+private:
+  LiquidCrystal_I2C& lcd_display;
+}; // class WeatherLcdView
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 DHT dht_sensor(15, DHT11);
+unsigned long last_updated = 0;
 
-uint8_t previous_button_state = LOW;
-bool display_in_fahrenheit = false;
+int history_button_prev_state = LOW;
+bool display_current = true;
 
-// ALA: a setup() függvény induláskor fut le inicializációkhoz
-void setup() {
-  // ALA: kijelző inicializálása, háttérfény bekapcsolása és puffer törlése
-  lcd_display.init();
-  lcd_display.backlight();
-  lcd_display.clear();
-  
-  // ALA: időjárásszenzor inicializálása
-  dht_sensor.begin();
+void WeatherStation::WeatherStationController::update() {
+  if (unsigned long current_time = ::millis(); current_time > last_updated + 60000 || last_updated == 0) {
+    weather_data_model.addWeatherDatapoint({current_time, dht_sensor.readTemperature(), dht_sensor.readHumidity()});
+    
+    display_current
+      ? weather_data_view.displayCurrent(weather_data_model.getCurrent())
+      : weather_data_view.displayHistory(weather_data_model.getHistory());
 
-  pinMode(18, INPUT);
+    last_updated = current_time;
+  }
+
+  if (int history_button_new_state = digitalRead(18); history_button_new_state != history_button_prev_state) {
+    if (history_button_new_state == HIGH) display_current ^= 1;
+
+    display_current
+      ? weather_data_view.displayCurrent(weather_data_model.getCurrent())
+      : weather_data_view.displayHistory(weather_data_model.getHistory());
+
+    history_button_prev_state = history_button_new_state;
+  }
 }
 
-// ALA: a loop() függvény inicializálás után fut végtelen ciklusként
+WeatherLcdView weather_lcd_view(lcd);
+WeatherStation::WeatherDataContainer weather_data_container{};
+
+WeatherStation::WeatherStationController weather_station_controller(weather_lcd_view, weather_data_container);
+
+void setup() {
+  Serial.begin(MONITOR_SPEED);
+
+  pinMode(18, INPUT);
+
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  
+  dht_sensor.begin();
+
+  Serial.println("Init");
+}
+
 void loop() {
-  // ALA: hőmérséklet és páratartalom értékek lekérése a szenzortól
-  // Kriszta aka KRI: nem lenne elég később helyben meghívni a függvényeket?
-  //      így csak fölöslegesen sok kódot írsz...
-  // ALA: így átláthatóbb és könyebben karbantartható marad, egyébként is,
-  //      const minősítő miatt a fordító jó eséllyel kioptimalizálja
-  const float temperature = dht_sensor.readTemperature();
-  const float humidity = dht_sensor.readHumidity();
-
-  const uint8_t current_button_state = digitalRead(18);
-  if (previous_button_state == LOW && current_button_state == HIGH) {
-    display_in_fahrenheit ^= 1;
-  }
-  previous_button_state = current_button_state;
-
-  // ALA: lekért értékek kiírása a kijelzőre
-  lcd_display.setCursor(0,0);
-  lcd_display.print("Homerseklet:");
-  display_in_fahrenheit
-    ? lcd_display.printf("%3.0fF", celsius_to_fahrenheit(temperature))
-    : lcd_display.printf("%3.0fC", temperature);
-  lcd_display.setCursor(0,1);
-  lcd_display.printf("Paratartalom:%2.0f%%", humidity);
-  // KRI: %% mégis minek?
-  // ALA: sima % kell, de úgy csak eldobja, így tudom egyedül escapelni, hogy
-  //      ténylegesen kiírja
-
-  // KRI: itt minek a késleltetés?
-  // ALA: túl gyakran pollolva túlmelegedne a kicsi, 2sec jónak tűnt
-  delay(2000);
+  weather_station_controller.update();
 }
